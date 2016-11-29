@@ -6,3 +6,14 @@
 /FastSockets/bin
 /FastSockets/Help/LastBuild.log
 /FastSockets/StyleCop.Cache
+/FastSockets/obj
+/Examples/HappyServerClient/.vs
+/Examples/HappyServerClient/HappyClient/obj
+/Examples/HappyServerClient/HappyServer/obj
+/Examples/HappyServerClient/HappyServerClient/obj
+/Examples/HappyServerClient/HappyClient/bin
+/Examples/HappyServerClient/HappyClient/obj
+/Examples/HappyServerClient/HappyServer/bin
+/Examples/HappyServerClient/HappyServer/obj
+/Examples/HappyServerClient/HappyServerClient/bin
+/Examples/HappyServerClient/HappyServerClient/obj

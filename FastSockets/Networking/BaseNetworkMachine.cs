@@ -187,7 +187,7 @@ namespace FastSockets.Networking
         /// <summary>
         /// Initializes a new instance of the <see cref="BaseNetworkMachine{packetsEnumType, classType}" /> class.
         /// </summary>
-        /// <param name="logFile">The log file.</param>
+        /// <param name="logFile">The log file. When string.Empty dont use logfiles!</param>
         /// <param name="connectionType">Type of the connection.</param>
         /// <param name="tcpTimeout">The TCP timeout.</param>
         internal BaseNetworkMachine(string logFile, EConnectionType connectionType, int tcpTimeout)
