@@ -1,0 +1,116 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <!-- The configuration and platform will be used to determine which assemblies to include from solution and
+				 project documentation sources -->
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{5601d28e-6a9f-49fa-a0ec-e62421a7491c}</ProjectGuid>
+    <SHFBSchemaVersion>2015.6.5.0</SHFBSchemaVersion>
+    <!-- AssemblyName, Name, and RootNamespace are not used by SHFB but Visual Studio adds them anyway -->
+    <AssemblyName>Documentation</AssemblyName>
+    <RootNamespace>Documentation</RootNamespace>
+    <Name>Documentation</Name>
+    <!-- SHFB properties -->
+    <FrameworkVersion>.NET Framework 4.0</FrameworkVersion>
+    <OutputPath>.\Help\</OutputPath>
+    <HtmlHelpName>Fast Sockets Documentation</HtmlHelpName>
+    <Language>en-US</Language>
+    <DocumentationSources>
+      <DocumentationSource sourceFile="bin\Debug\FastSockets.XML" />
+      <DocumentationSource sourceFile="bin\Debug\FastSockets.dll" />
+    </DocumentationSources>
+    <HelpFileVersion>1.0.0.2</HelpFileVersion>
+    <MaximumGroupParts>2</MaximumGroupParts>
+    <NamespaceGrouping>True</NamespaceGrouping>
+    <SyntaxFilters>C#</SyntaxFilters>
+    <SdkLinkTarget>Blank</SdkLinkTarget>
+    <RootNamespaceContainer>True</RootNamespaceContainer>
+    <PresentationStyle>VS2013</PresentationStyle>
+    <Preliminary>False</Preliminary>
+    <NamingMethod>MemberName</NamingMethod>
+    <HelpTitle>Fast Sockets Documentation</HelpTitle>
+    <CopyrightText>Copyright Tobias Lenz. All rights reserved.</CopyrightText>
+    <ContentPlacement>AboveNamespaces</ContentPlacement>
+    <VisibleItems>Attributes, ExplicitInterfaceImplementations, InheritedMembers, InheritedFrameworkMembers, InheritedFrameworkInternalMembers, InheritedFrameworkPrivateMembers, Internals, Privates, PrivateFields, Protected, SealedProtected, ProtectedInternalAsProtected</VisibleItems>
+    <SaveComponentCacheCapacity>100</SaveComponentCacheCapacity>
+    <BuildAssemblerVerbosity>OnlyWarningsAndErrors</BuildAssemblerVerbosity>
+    <HelpFileFormat>HtmlHelp1</HelpFileFormat>
+    <IndentHtml>False</IndentHtml>
+    <KeepLogFile>True</KeepLogFile>
+    <DisableCodeBlockComponent>False</DisableCodeBlockComponent>
+    <CleanIntermediates>True</CleanIntermediates>
+    <RootNamespaceTitle>FastSockets</RootNamespaceTitle>
+    <CopyrightHref>
+    </CopyrightHref>
+    <NamespaceSummaries>
+      <NamespaceSummaryItem name="(global)" isDocumented="False">The Fast Sockets Library</NamespaceSummaryItem>
+<NamespaceSummaryItem name="FastSockets" isDocumented="True">The Fast Sockets Library</NamespaceSummaryItem>
+<NamespaceSummaryItem name="FastSockets.Networking" isDocumented="True">The Networking part of the Library</NamespaceSummaryItem>
+<NamespaceSummaryItem name="FastSockets.Serializer" isDocumented="True">The Data Serializer of the Library</NamespaceSummaryItem>
+<NamespaceSummaryItem name="FastSockets (Group)" isGroup="True" isDocumented="False" /></NamespaceSummaries>
+    <ProjectSummary>&amp;lt%3bhtml&amp;gt%3b
+Fast Sockets is developed by Tobias Lenz to provide fast and reliable Client-Server connections.&amp;lt%3bbr/&amp;gt%3b
+Developers:
+&amp;lt%3ba href=&amp;quot%3bmailto:Tobias.Lenz1%40gmx.de%3fSubject=Fast%2520Sockets&amp;quot%3b target=&amp;quot%3b_top&amp;quot%3b&amp;gt%3bTobias Lenz&amp;lt%3b/a&amp;gt%3b, 
+&amp;lt%3b/html&amp;gt%3b</ProjectSummary>
+    <HeaderText>
+    </HeaderText>
+    <TransformComponentArguments>
+      <Argument Key="logoFile" Value="company_logo.png" />
+      <Argument Key="logoHeight" Value="" />
+      <Argument Key="logoWidth" Value="" />
+      <Argument Key="logoAltText" Value="" />
+      <Argument Key="logoPlacement" Value="left" />
+      <Argument Key="logoAlignment" Value="left" />
+      <Argument Key="maxVersionParts" Value="" />
+      <Argument Key="defaultLanguage" Value="cs" />
+      <Argument Key="includeEnumValues" Value="true" />
+    </TransformComponentArguments>
+  </PropertyGroup>
+  <!-- There are no properties for these groups.  AnyCPU needs to appear in order for Visual Studio to perform
+			 the build.  The others are optional common platform types that may appear. -->
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|Win32' ">
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|Win32' ">
+  </PropertyGroup>
+  <!-- Import the SHFB build targets -->
+  <Import Project="$(SHFBROOT)\SandcastleHelpFileBuilder.targets" />
+  <!-- The pre-build and post-build event properties must appear *after* the targets file import in order to be
+			 evaluated correctly. -->
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+  </PropertyGroup>
+  <ItemGroup>
+    <Folder Include="icons\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="icons\company_logo.png">
+      <ImageId>company_logo</ImageId>
+      <AlternateText>company logo</AlternateText>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="FastSockets.csproj">
+      <Name>FastSockets</Name>
+      <Project>{D63E164C-051F-4226-977F-9FBD23DE4934}</Project>
+    </ProjectReference>
+  </ItemGroup>
+</Project>
