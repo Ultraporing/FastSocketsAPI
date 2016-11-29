@@ -19,8 +19,7 @@
     <Language>en-US</Language>
     <DocumentationSources>
       <DocumentationSource sourceFile="bin\Debug\FastSockets.XML" />
-      <DocumentationSource sourceFile="bin\Debug\FastSockets.dll" />
-    </DocumentationSources>
+<DocumentationSource sourceFile="bin\Debug\FastSockets_D_x86.dll" /></DocumentationSources>
     <HelpFileVersion>1.0.0.2</HelpFileVersion>
     <MaximumGroupParts>2</MaximumGroupParts>
     <NamespaceGrouping>True</NamespaceGrouping>
@@ -46,10 +45,11 @@
     </CopyrightHref>
     <NamespaceSummaries>
       <NamespaceSummaryItem name="(global)" isDocumented="False">The Fast Sockets Library</NamespaceSummaryItem>
-<NamespaceSummaryItem name="FastSockets" isDocumented="True">The Fast Sockets Library</NamespaceSummaryItem>
-<NamespaceSummaryItem name="FastSockets.Networking" isDocumented="True">The Networking part of the Library</NamespaceSummaryItem>
-<NamespaceSummaryItem name="FastSockets.Serializer" isDocumented="True">The Data Serializer of the Library</NamespaceSummaryItem>
-<NamespaceSummaryItem name="FastSockets (Group)" isGroup="True" isDocumented="False" /></NamespaceSummaries>
+      <NamespaceSummaryItem name="FastSockets" isDocumented="True">The Fast Sockets Library</NamespaceSummaryItem>
+      <NamespaceSummaryItem name="FastSockets.Networking" isDocumented="True">The Networking part of the Library</NamespaceSummaryItem>
+      <NamespaceSummaryItem name="FastSockets.Serializer" isDocumented="True">The Data Serializer of the Library</NamespaceSummaryItem>
+      <NamespaceSummaryItem name="FastSockets (Group)" isGroup="True" isDocumented="False" />
+    </NamespaceSummaries>
     <ProjectSummary>&amp;lt%3bhtml&amp;gt%3b
 Fast Sockets is developed by Tobias Lenz to provide fast and reliable Client-Server connections.&amp;lt%3bbr/&amp;gt%3b
 Developers:
