@@ -1,9 +1,0 @@
-E:\Visual Studio Projekte\FastSockets\FastSockets\bin\Release\FastSockets_x86.dll
-E:\Visual Studio Projekte\FastSockets\FastSockets\bin\Release\FastSockets_x86.pdb
-E:\Visual Studio Projekte\FastSockets\FastSockets\obj\Release\FastSockets_x86.dll
-E:\Visual Studio Projekte\FastSockets\FastSockets\obj\Release\FastSockets_x86.pdb
-E:\Visual Studio Projekte\FastSockets\FastSockets\obj\Release\FastSockets.csprojResolveAssemblyReference.cache
-E:\Visual Studio Projekte\FastSocketAPI\FastSockets\bin\Release\FastSockets_x86.dll
-E:\Visual Studio Projekte\FastSocketAPI\FastSockets\bin\Release\FastSockets_x86.pdb
-E:\Visual Studio Projekte\FastSocketAPI\FastSockets\obj\Release\FastSockets_x86.dll
-E:\Visual Studio Projekte\FastSocketAPI\FastSockets\obj\Release\FastSockets_x86.pdb

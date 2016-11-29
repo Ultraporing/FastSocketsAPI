@@ -1,8 +1,0 @@
-E:\Visual Studio Projekte\DreamLib\DreamLib\bin\Debug\DreamLib.dll
-E:\Visual Studio Projekte\DreamLib\DreamLib\bin\Debug\DreamLib.pdb
-E:\Visual Studio Projekte\DreamLib\DreamLib\obj\Debug\DreamLib.dll
-E:\Visual Studio Projekte\DreamLib\DreamLib\obj\Debug\DreamLib.pdb
-E:\Visual Studio Projekte\DreamLib\DreamLib\bin\Debug\DreamLib.XML
-E:\Visual Studio Projekte\DreamLib\DreamLib\bin\Debug\DreamLib.dll.CodeAnalysisLog.xml
-E:\Visual Studio Projekte\DreamLib\DreamLib\bin\Debug\DreamLib.dll.lastcodeanalysissucceeded
-E:\Visual Studio Projekte\DreamLib\DreamLib\obj\Debug\DreamLib.csprojResolveAssemblyReference.cache
