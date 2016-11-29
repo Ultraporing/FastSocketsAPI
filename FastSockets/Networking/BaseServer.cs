@@ -563,7 +563,7 @@ namespace FastSockets.Networking
         protected virtual void DisplayHelp()
         {
             Console.WriteLine("===================================================");
-            Console.WriteLine("#---------Tobias Lenz Server---------#");
+            Console.WriteLine("#------------Fast Sockets API Server--------------#");
             Console.WriteLine("===================================================");
             Console.WriteLine("#--Display this with 'help'-----------------------#");
             Console.WriteLine("#--Stop Server with 'stop' or 'exit'--------------#");
