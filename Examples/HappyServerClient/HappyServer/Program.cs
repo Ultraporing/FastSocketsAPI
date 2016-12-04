@@ -1,6 +1,7 @@
 using FastSockets.Networking;
 using System;
 using System.Collections.Generic;
+using System.Net;
 
 namespace HappyServer
 {
@@ -13,7 +14,7 @@ namespace HappyServer
             // subscribe to our event
             s.OnMessagePacketReceived += OnMessagePacketReceived;
 
-            s.Start();
+            s.Start(IPAddress.Any);
             while (s.IsRunning)
             {
                 s.Update();

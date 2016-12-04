@@ -570,7 +570,6 @@ namespace FastSockets.Networking
             Console.WriteLine("#--Disconnect parent with 'dc'--------------------#");
             Console.WriteLine("#--Disconnect client with 'dc <ID>'---------------#");
             Console.WriteLine("#--Disconnect all clients with 'dc all'-----------#");
-            Console.WriteLine("#--Connect parent with 'con <IP:Port:LocalPort>'--#");
             Console.WriteLine("#--List all Client Connections with 'list'--------#");
             Console.WriteLine("===================================================");
         }

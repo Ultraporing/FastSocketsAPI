@@ -15,7 +15,7 @@ namespace HappyClient
             // subscribe to our event
             c.OnMessagePacketReceived += OnMessagePacketReceived;
 
-            c.Connect(new IPEndPoint(IPAddress.Loopback, 12341), 12340);
+            c.Connect(new IPEndPoint(IPAddress.Loopback, 12341), new IPEndPoint(IPAddress.Any, 12340));
 
             PacketDesc_Message msg = new PacketDesc_Message();
             msg.PacketTarget = EConnectionType.SECTOR_SERVER;
