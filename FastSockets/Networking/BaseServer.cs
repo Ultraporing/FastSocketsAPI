@@ -356,7 +356,7 @@ namespace FastSockets.Networking
         /// <summary>
         /// Starts this instance.
         /// </summary>
-        public void Start()
+        public void Start(IPAddress listenAddress)
         {
             ConsoleLogger.WriteToLog("Starting Server...", true);
 
@@ -364,7 +364,7 @@ namespace FastSockets.Networking
             {
                 try
                 {
-                    Server = new TcpListener(IPAddress.Any, Port);
+                    Server = new TcpListener(listenAddress, Port);
                     Server.Start();
                     IsRunning = true;
                 }
@@ -623,40 +623,8 @@ namespace FastSockets.Networking
                     }
                 }
             }
-            else if (spl[0] == "con" && spl.Length == 2)
-            {
-                string[] ipPort = spl[1].Split(':');
-                if (ipPort.Length == 3)
-                {
-                    int port, bindingPort;
-                    try
-                    {
-                        int.TryParse(ipPort[1], out port);
-                    }
-                    catch
-                    {
-                        Console.WriteLine("Error Port is not a Integer!");
-                        return;
-                    }
 
-                    try
-                    {
-                        int.TryParse(ipPort[2], out bindingPort);
-                    }
-                    catch
-                    {
-                        Console.WriteLine("Error Local Binding Port is not a Integer!");
-                        return;
-                    }
-
-                    Connect(new IPEndPoint(IPAddress.Parse(ipPort[0]), port), bindingPort);
-                }
-                else
-                {
-                    Console.WriteLine("Invalid syntax! 'con IP:Port:LocalBindingPort' is needed!");
-                    return;
-                }
-            }
+            
             else if (spl[0] == "help" && spl.Length == 1)
             {
                 DisplayHelp();

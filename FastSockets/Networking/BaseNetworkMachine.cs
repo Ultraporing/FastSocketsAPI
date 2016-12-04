@@ -267,7 +267,7 @@ namespace FastSockets.Networking
         /// <param name="connectionTries">The connection tries.</param>
         /// <param name="sleepMS">The sleep milliseconds.</param>
         /// <returns>Returns true on connection success.</returns>
-        public bool Connect(IPEndPoint ipAddr, int localBindingPort, int connectionTries = 5, int sleepMS = 1000)
+        public bool Connect(IPEndPoint ipAddr, IPEndPoint localEndpoint, int connectionTries = 5, int sleepMS = 1000)
         {
             if (IsConnected())
             {
@@ -275,7 +275,7 @@ namespace FastSockets.Networking
             }
 
             ConsoleLogger.WriteToLog("Connecting to Parent Server...", true);
-            int localPort = localBindingPort;
+            
             ParentServerConnection = new ClientConnection();
 
             switch (_connectionType)
@@ -295,11 +295,13 @@ namespace FastSockets.Networking
             {
                 try
                 {
-                    ParentServerConnection.ThisClient = new TcpClient(new IPEndPoint(IPAddress.Loopback, localPort));
+                    ParentServerConnection.ThisClient = new TcpClient(localEndpoint);
                 }
-                catch (SocketException)
+                catch (SocketException e)
                 {
-                    localPort++;
+                    ConsoleLogger.WriteToLog(e.Message);
+
+                    return false;
                 }
             }
 
