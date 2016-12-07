@@ -18,9 +18,9 @@
     <HtmlHelpName>Fast Sockets Documentation</HtmlHelpName>
     <Language>en-US</Language>
     <DocumentationSources>
-      <DocumentationSource sourceFile="bin\Debug\FastSockets.XML" />
-<DocumentationSource sourceFile="bin\Debug\FastSockets_D_x86.dll" /></DocumentationSources>
-    <HelpFileVersion>1.0.0.2</HelpFileVersion>
+      <DocumentationSource sourceFile="bin\x86\FastSockets.xml" />
+<DocumentationSource sourceFile="bin\x86\FastSocketsAPI.dll" /></DocumentationSources>
+    <HelpFileVersion>1.0.0.3</HelpFileVersion>
     <MaximumGroupParts>2</MaximumGroupParts>
     <NamespaceGrouping>True</NamespaceGrouping>
     <SyntaxFilters>C#</SyntaxFilters>

@@ -17,3 +17,6 @@
 /Examples/HappyServerClient/HappyServer/obj
 /Examples/HappyServerClient/HappyServerClient/bin
 /Examples/HappyServerClient/HappyServerClient/obj
+/FastSockets/FastSocketsAPI.1.0.1.nupkg
+/FastSockets/FastSocketsAPI.nuspec
+/FastSockets/nuget.exe
