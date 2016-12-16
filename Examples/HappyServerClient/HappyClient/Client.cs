@@ -36,7 +36,7 @@ namespace HappyClient
         {
             PacketDesc_Message packet = (PacketDesc_Message)conPkt.Value;
 
-            Console.WriteLine("Recieved Message Packet! Client ID: " + conPkt.Key.ThisID + ", Data: " + packet.Message);
+            Console.WriteLine("Recieved Message Packet! Client ID: " + conPkt.Key.ThisID + ", Data: " + packet.Message + ", Ping: " + packet.PacketOriginTotalLatency);
 
             if (OnMessagePacketReceived != null)
             {

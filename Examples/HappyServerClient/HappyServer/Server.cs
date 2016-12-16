@@ -23,7 +23,7 @@ namespace HappyServer
         // LoadConfigFromFile(cfgFileName);
         // SetPort();
         // ---
-        public Server() :  base("HappyServer.cfg", "HappyServerLog", EConnectionType.SECTOR_SERVER, 1000, 5000)
+        public Server() :  base("HappyServer.cfg", "HappyServerLog", 1000, 5000)
         {
             OnClientAccepted += Server_OnClientAccepted;
             OnClientDisconnected += Server_OnClientDisconnected;
@@ -57,9 +57,10 @@ namespace HappyServer
             Console.WriteLine("Recieved Message Packet! Client ID: " + conPkt.Key.ThisID + ", Data: " + packet.Message);
 
             PacketDesc_Message msg = new PacketDesc_Message();
-            msg.PacketTarget = EConnectionType.SECTOR_SERVER;
-            msg.Message = "I like Turtles!";
-            SendPacketToClient(msg, conPkt.Key.ThisID);
+            packet.PacketTarget = EConnectionType.CLIENT;
+            packet.Message = "I like Turtles!";
+
+            SendPacketToClient(packet, conPkt.Key.ThisID);
 
             if (OnMessagePacketReceived != null)
             {

@@ -18,8 +18,9 @@ namespace HappyClient
             c.Connect(new IPEndPoint(IPAddress.Loopback, 12341), new IPEndPoint(IPAddress.Any, 12340));
 
             PacketDesc_Message msg = new PacketDesc_Message();
-            msg.PacketTarget = EConnectionType.SECTOR_SERVER;
+            msg.PacketTarget = EConnectionType.SERVER;
             msg.Message = "I like Trains!";
+            msg.PacketOriginClientID = c.UniqueID;
             c.SendPacketToParent(msg);
 
             while (c.IsConnected())

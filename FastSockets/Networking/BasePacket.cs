@@ -51,19 +51,9 @@ namespace FastSockets.Networking
         NONE,
 
         /// <summary>
-        /// The login server
+        /// The server
         /// </summary>
-        LOGIN_SERVER,
-
-        /// <summary>
-        /// The supervisor server
-        /// </summary>
-        SUPERVISOR_SERVER,
-
-        /// <summary>
-        /// The sector server
-        /// </summary>
-        SECTOR_SERVER,
+        SERVER,
 
         /// <summary>
         /// The client
@@ -82,6 +72,8 @@ namespace FastSockets.Networking
         /// The packet target
         /// </summary>
         public EConnectionType PacketTarget = EConnectionType.NONE;
+        public int PacketOriginTotalLatency; // Total latency from original packet sender to target, filled out by server
+        public int PacketOriginClientID = int.MinValue;
 
         /// <summary>
         /// Finalizes the packet.
@@ -90,7 +82,8 @@ namespace FastSockets.Networking
         public byte[] FinalizePacket()
         {
             Debug.Assert(PacketTarget != EConnectionType.NONE, "Packet has to have a Packet Target!");
-
+            Debug.Assert(PacketOriginClientID >= -1, "Packet has to have a PacketOriginClientID!");
+            
             int packetID = -1;
             string[] arr = Enum.GetNames(typeof(CustomPacketEnum));
             for (int i = 0; i < arr.Length; i++)
@@ -165,11 +158,6 @@ namespace FastSockets.Networking
         /// <summary>
         /// The time
         /// </summary>
-        public int Time;
-
-        /// <summary>
-        /// Is the ping packet returning
-        /// </summary>
-        public bool IsPong;
+        public int ToServerLatency;
     }
 }

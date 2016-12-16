@@ -12,6 +12,7 @@ namespace FastSockets.Networking
     using System.Linq;
     using System.Net;
     using System.Net.Sockets;
+    using System.Text;
     using System.Threading;
 
     /// <summary>
@@ -242,6 +243,10 @@ namespace FastSockets.Networking
         /// </summary>
         private int _pingPacketInterval = 0;
 
+        private System.Net.NetworkInformation.Ping pingSender = new System.Net.NetworkInformation.Ping();
+        private string pingData = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+        private System.Net.NetworkInformation.PingOptions options = new System.Net.NetworkInformation.PingOptions(64, true);
+
         /// <summary>
         /// Initializes a new instance of the <see cref="BaseServer{PacketEnum, classType}" /> class.
         /// </summary>
@@ -250,7 +255,7 @@ namespace FastSockets.Networking
         /// <param name="connectionType">Type of the connection.</param>
         /// <param name="pingPacketInterval">The ping packet interval.</param>
         /// <param name="tcpTimeout">The TCP timeout.</param>
-        public BaseServer(string cfgFile, string logFile, EConnectionType connectionType, int pingPacketInterval, int tcpTimeout) : base(logFile, connectionType, tcpTimeout)
+        public BaseServer(string cfgFile, string logFile, int pingPacketInterval, int tcpTimeout) : base(logFile, EConnectionType.SERVER, tcpTimeout)
         {
             // Setup Config Reader
             if (Directory.Exists("Config"))
@@ -270,7 +275,7 @@ namespace FastSockets.Networking
 
             Clients = new Dictionary<int, ClientConnection>();
             PingPacketInterval = pingPacketInterval;
-
+            pingSender.PingCompleted += PingCallback;
             PingTimer = new Timer(new TimerCallback(PingClients), null, 0, PingPacketInterval);
         }
 
@@ -286,7 +291,7 @@ namespace FastSockets.Networking
         {
             Clients = new Dictionary<int, ClientConnection>();
             PingPacketInterval = pingPacketInterval;
-
+            pingSender.PingCompleted += PingCallback;
             PingTimer = new Timer(new TimerCallback(PingClients), null, 0, PingPacketInterval);
         }
 
@@ -474,7 +479,7 @@ namespace FastSockets.Networking
         public void SendPacketToClient<CustomPacketEnum>(BasePacket<CustomPacketEnum> packet, int targetID)
         {
             ClientConnection clientCon = null;
-            byte[] data = packet.FinalizePacket();
+            
 
             if (ParentServerConnection != null)
             {
@@ -487,6 +492,8 @@ namespace FastSockets.Networking
             {
                 if (Clients.TryGetValue(targetID, out clientCon))
                 {
+                    packet.PacketOriginTotalLatency = clientCon.Ping + (packet.PacketOriginClientID != -1 ? Clients[packet.PacketOriginClientID].Ping : 0);
+                    byte[] data = packet.FinalizePacket();
                     clientCon.ThisClient.GetStream().Write(data, 0, data.Length);
                 }
             }
@@ -500,8 +507,6 @@ namespace FastSockets.Networking
         /// <param name="idToIgnore">The identifier to ignore.</param>
         public void SendPacketToAllClients<CustomPacketEnum>(BasePacket<CustomPacketEnum> packet, int idToIgnore = -1)
         {
-            byte[] data = packet.FinalizePacket();
-
             foreach (KeyValuePair<int, ClientConnection> cc in Clients)
             {
                 if (cc.Key == idToIgnore)
@@ -511,6 +516,8 @@ namespace FastSockets.Networking
 
                 if (cc.Value.ThisClient.Connected)
                 {
+                    packet.PacketOriginTotalLatency = cc.Value.Ping + packet.PacketOriginClientID != -1 ? Clients[packet.PacketOriginClientID].Ping : 0;
+                    byte[] data = packet.FinalizePacket();
                     cc.Value.ThisClient.GetStream().Write(data, 0, data.Length); 
                 }
             }
@@ -532,11 +539,12 @@ namespace FastSockets.Networking
         {
             if (Clients.Count > 0 && !ShuttingDown)
             {
-                PacketDesc_Ping pkt = new PacketDesc_Ping();
-                pkt.PacketTarget = (EConnectionType)(((int)ConnectionType) + 1);
-                pkt.Time = DateTime.UtcNow.Millisecond;
-                pkt.IsPong = false;
-                SendPacketToAllClients(pkt);
+                byte[] buffer = Encoding.ASCII.GetBytes(pingData);
+
+                foreach (KeyValuePair<int, ClientConnection> cc in Clients)
+                {
+                    pingSender.SendAsync(((IPEndPoint)cc.Value.ThisClient.Client.RemoteEndPoint).Address, TCPTimeout, buffer, cc.Value.ThisID);
+                }
             }
         }
 
@@ -670,33 +678,32 @@ namespace FastSockets.Networking
             }
         }
 
-        /// <summary>
-        /// Received the packet ping.
-        /// </summary>
-        /// <param name="conPkt">The sender connection and packet.</param>
-        /// <returns>
-        /// use how needed
-        /// </returns>
-        protected override bool ReceivedPacket_Ping(KeyValuePair<ClientConnection, object> conPkt)
+        protected void PingCallback(object sender, System.Net.NetworkInformation.PingCompletedEventArgs e)
         {
-            if (!base.ReceivedPacket_Ping(conPkt))
+            // If the operation was canceled, display a message to the user.
+            if (e.Cancelled)
             {
-                PacketDesc_Ping packet = (PacketDesc_Ping)conPkt.Value;
-
-                Clients[conPkt.Key.ThisID].Ping = DateTime.UtcNow.Millisecond - packet.Time;
-                //ConsoleLogger.WriteToLog("Recieved Ping Packet! Sender ID: " + conPkt.Key.ThisID + ", Data: " + Clients[conPkt.Key.ThisID].Ping);
-
-                if (OnPingReceived != null)
-                {
-                    OnPingReceived(conPkt);
-                }
-
-                return true;
+                Console.WriteLine("Ping canceled.");
+                Disconnect(((ClientConnection)e.UserState).ThisID);
             }
 
-            return false;
-        }
+            // If an error occurred, display the exception to the user.
+            if (e.Error != null)
+            {
+                Console.WriteLine("Ping failed:");
+                Disconnect(((ClientConnection)e.UserState).ThisID);
+            }
 
+            System.Net.NetworkInformation.PingReply reply = e.Reply;
+            int id = ((int)e.UserState);
+            Clients[id].Ping = (int)(reply.RoundtripTime / 2);
+            PacketDesc_Ping pkt = new PacketDesc_Ping();
+            pkt.PacketTarget = EConnectionType.CLIENT;
+            pkt.PacketOriginClientID = UniqueID;
+            pkt.ToServerLatency = Clients[id].Ping; // send clients one way to server latency
+            SendPacketToClient(pkt, id);
+        }
+        
         /// <summary>
         /// Runs the console menu.
         /// </summary>
@@ -751,7 +758,7 @@ namespace FastSockets.Networking
             {
                 TcpListener listener = (TcpListener)ar.AsyncState;
                 TcpClient newClient = listener.EndAcceptTcpClient(ar);
-                newClient.ReceiveTimeout = TCPTimeout;
+                newClient.ReceiveTimeout = 0;
                 Thread t = new Thread(new ParameterizedThreadStart(HandleClient));
                 t.IsBackground = true;
                 int uniqueID = CreateUniqueClientID();
@@ -763,14 +770,8 @@ namespace FastSockets.Networking
 
                 switch (ConnectionType)
                 {
-                    case EConnectionType.LOGIN_SERVER:
-                        sC.ConnectionType = EConnectionType.SUPERVISOR_SERVER;
-                        break;
-                    case EConnectionType.SECTOR_SERVER:
+                    case EConnectionType.SERVER:
                         sC.ConnectionType = EConnectionType.CLIENT;
-                        break;
-                    case EConnectionType.SUPERVISOR_SERVER:
-                        sC.ConnectionType = EConnectionType.SECTOR_SERVER;
                         break;
                 }
 
@@ -783,11 +784,13 @@ namespace FastSockets.Networking
                 sidpkg.PacketTarget = sC.ConnectionType;
                 sidpkg.Id = uniqueID;
                 sidpkg.SenderID = UniqueID;
+                sidpkg.PacketOriginClientID = UniqueID;
                 SendPacketToClient(sidpkg, uniqueID);
 
                 PacketDesc_ClientConnected copkg = new PacketDesc_ClientConnected();
                 copkg.PacketTarget = sC.ConnectionType;
                 copkg.OtherClientID = uniqueID;
+                copkg.PacketOriginClientID = UniqueID;
                 SendPacketToAllClients(copkg, uniqueID);
 
                 UpdateTitle();

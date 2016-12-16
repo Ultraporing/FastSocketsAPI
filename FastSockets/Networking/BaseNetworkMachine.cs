@@ -247,14 +247,14 @@ namespace FastSockets.Networking
         /// <param name="packet">The packet.</param>
         public void SendPacketToParent<T>(BasePacket<T> packet)
         {
-            byte[] data = packet.FinalizePacket();
-
             if (ParentServerConnection != null)
             {
                 while (UniqueID == -1)
                 {
                 }
 
+                packet.PacketOriginClientID = _uniqueID;
+                byte[] data = packet.FinalizePacket();
                 ParentServerConnection.ThisClient.GetStream().Write(data, 0, data.Length);
             }
         }
@@ -281,13 +281,10 @@ namespace FastSockets.Networking
             switch (_connectionType)
             {
                 case EConnectionType.CLIENT:
-                    ParentServerConnection.ConnectionType = EConnectionType.SECTOR_SERVER;
+                    ParentServerConnection.ConnectionType = EConnectionType.SERVER;
                     break;
-                case EConnectionType.SECTOR_SERVER:
-                    ParentServerConnection.ConnectionType = EConnectionType.SUPERVISOR_SERVER;
-                    break;
-                case EConnectionType.SUPERVISOR_SERVER:
-                    ParentServerConnection.ConnectionType = EConnectionType.LOGIN_SERVER;
+                case EConnectionType.SERVER:
+                    ParentServerConnection.ConnectionType = EConnectionType.SERVER;
                     break;
             }
 
@@ -548,7 +545,7 @@ namespace FastSockets.Networking
         internal bool CallPacketFunction<ClassType>(int packetID, ClientConnection sender, ref byte[] data, ref Dictionary<int, Func<ClassType, object, object>> dict) where ClassType : class
         {
             object ret = Serializer.DataSerializers.ByteArrayToObject(data);
-
+ 
             if (!dict.ContainsKey(packetID))
             {
                 ConsoleLogger.WriteErrorToLog("Packet does not exist, Invalid packetID: " + packetID);
@@ -616,26 +613,18 @@ namespace FastSockets.Networking
         {
             PacketDesc_Ping packet = (PacketDesc_Ping)conPkt.Value;
 
-            if (!packet.IsPong)
+            if (ParentServerConnection != null)
             {
-                ParentServerConnection.Ping = DateTime.UtcNow.Millisecond - packet.Time;
-                //ConsoleLogger.WriteToLog("Recieved Ping Packet! Sender ID: " + conPkt.Key.ThisID + ", Data: " + ParentServerConnection.Ping);
-
-                PacketDesc_Ping pkt = new PacketDesc_Ping();
-                pkt.PacketTarget = conPkt.Key.ConnectionType;
-                pkt.Time = DateTime.UtcNow.Millisecond;
-                pkt.IsPong = true;
-                SendPacketToParent(pkt);
-
-                if (OnPingReceived != null)
-                {
-                    OnPingReceived(conPkt);
-                }
-
-                return true;
+                ParentServerConnection.Ping = packet.ToServerLatency;
+                //Console.WriteLine("Ping recieved, latency: " + packet.ToServerLatency);
             }
 
-            return false;
+            if (OnPingReceived != null)
+            {
+                OnPingReceived(conPkt);
+            }
+
+            return true;
         }
 
         /// <summary>
