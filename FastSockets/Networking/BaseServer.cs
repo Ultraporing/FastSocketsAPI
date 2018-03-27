@@ -6,11 +6,13 @@
 
 namespace FastSockets.Networking
 {
+    using FastSockets.Helper;
     using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
     using System.Net;
+    using System.Net.NetworkInformation;
     using System.Net.Sockets;
     using System.Text;
     using System.Threading;
@@ -26,6 +28,8 @@ namespace FastSockets.Networking
         public delegate void OnClientEvent(int clientID);
         public new event OnPacketReceivedCallback OnPingReceived;
         public event OnClientEvent OnClientAccepted, OnClientDisconnected;
+        protected Mutex ClientListMutex = new Mutex();
+        protected int PingsDoneCount = 0, PingsRequired = 0;
 
         /// <summary>
         /// Gets or sets the clients.
@@ -243,9 +247,7 @@ namespace FastSockets.Networking
         /// </summary>
         private int _pingPacketInterval = 0;
 
-        private System.Net.NetworkInformation.Ping pingSender = new System.Net.NetworkInformation.Ping();
         private string pingData = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-        private System.Net.NetworkInformation.PingOptions options = new System.Net.NetworkInformation.PingOptions(64, true);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BaseServer{PacketEnum, classType}" /> class.
@@ -275,7 +277,6 @@ namespace FastSockets.Networking
 
             Clients = new Dictionary<int, ClientConnection>();
             PingPacketInterval = pingPacketInterval;
-            pingSender.PingCompleted += PingCallback;
             PingTimer = new Timer(new TimerCallback(PingClients), null, 0, PingPacketInterval);
         }
 
@@ -291,7 +292,6 @@ namespace FastSockets.Networking
         {
             Clients = new Dictionary<int, ClientConnection>();
             PingPacketInterval = pingPacketInterval;
-            pingSender.PingCompleted += PingCallback;
             PingTimer = new Timer(new TimerCallback(PingClients), null, 0, PingPacketInterval);
         }
 
@@ -434,9 +434,21 @@ namespace FastSockets.Networking
         /// </summary>
         /// <param name="uniqueID">The unique identifier.</param>
         public void Disconnect(int uniqueID = -1)
-        {
+        {       
             if (Clients.ContainsKey(uniqueID))
             {
+                ClientListMutex.WaitOne();
+
+                EConnectionType et = Clients[uniqueID].ConnectionType;
+
+                PacketDesc_ClientDisconnected dcPkt = new PacketDesc_ClientDisconnected();
+                dcPkt.OtherClientID = uniqueID;
+                dcPkt.PacketTarget = et;
+                dcPkt.PacketOriginClientID = UniqueID;
+                SendPacketToAllClients(dcPkt, uniqueID);
+
+                ConsoleLogger.WriteToLog("Disconnected Client ID:" + uniqueID, true);
+
                 if (Clients[uniqueID].ThisClient != null)
                 {
                     if (Clients[uniqueID].ThisClient.Connected)
@@ -444,30 +456,22 @@ namespace FastSockets.Networking
                         Clients[uniqueID].ThisClient.GetStream().Close();
                         if (Clients[uniqueID].ThisClient != null)
                         {
-                            Clients[uniqueID].ThisClient.Close(); 
+                            Clients[uniqueID].ThisClient.Close();
                         }
                     }
 
                     Clients[uniqueID].ThisClient = null;
+                    Clients.Remove(uniqueID);
+                    NumClientThreads--;
                 }
 
-                EConnectionType et = Clients[uniqueID].ConnectionType;
-
-                Clients.Remove(uniqueID);
-                NumClientThreads--;
-
-                PacketDesc_ClientDisconnected dcPkt = new PacketDesc_ClientDisconnected();
-                dcPkt.OtherClientID = uniqueID;
-                dcPkt.PacketTarget = et;
-                SendPacketToAllClients(dcPkt, uniqueID);
-
-                ConsoleLogger.WriteToLog("Disconnected Client ID:" + uniqueID, true);
+                ClientListMutex.ReleaseMutex();
 
                 if (OnClientDisconnected != null)
                 {
                     OnClientDisconnected(uniqueID);
                 }
-            }
+            }           
         }
 
         /// <summary>
@@ -480,7 +484,6 @@ namespace FastSockets.Networking
         {
             ClientConnection clientCon = null;
             
-
             if (ParentServerConnection != null)
             {
                 while (UniqueID == -1)
@@ -492,9 +495,22 @@ namespace FastSockets.Networking
             {
                 if (Clients.TryGetValue(targetID, out clientCon))
                 {
+                    if (!clientCon.ThisClient.Connected)
+                    {
+                        return;
+                    }
+
                     packet.PacketOriginTotalLatency = clientCon.Ping + (packet.PacketOriginClientID != -1 ? Clients[packet.PacketOriginClientID].Ping : 0);
                     byte[] data = packet.FinalizePacket();
-                    clientCon.ThisClient.GetStream().Write(data, 0, data.Length);
+                    try
+                    {
+                        clientCon.ThisClient.GetStream().Write(data, 0, data.Length);
+                    }
+                    catch (IOException ex)
+                    {
+                        // failed to write
+                    }
+                    
                 }
             }
         }
@@ -507,20 +523,30 @@ namespace FastSockets.Networking
         /// <param name="idToIgnore">The identifier to ignore.</param>
         public void SendPacketToAllClients<CustomPacketEnum>(BasePacket<CustomPacketEnum> packet, int idToIgnore = -1)
         {
+            ClientListMutex.WaitOne();
             foreach (KeyValuePair<int, ClientConnection> cc in Clients)
             {
                 if (cc.Key == idToIgnore)
                 {
                     continue; 
                 }
-
+          
                 if (cc.Value.ThisClient.Connected)
                 {
                     packet.PacketOriginTotalLatency = cc.Value.Ping + packet.PacketOriginClientID != -1 ? Clients[packet.PacketOriginClientID].Ping : 0;
                     byte[] data = packet.FinalizePacket();
-                    cc.Value.ThisClient.GetStream().Write(data, 0, data.Length); 
+                    try
+                    {
+                        cc.Value.ThisClient.GetStream().Write(data, 0, data.Length);
+                    }
+                    catch (IOException ex)
+                    {
+                        // failed to write
+                        ClientListMutex.ReleaseMutex();
+                    }                   
                 }
             }
+            ClientListMutex.ReleaseMutex();
         }
 
         /// <summary>
@@ -537,15 +563,24 @@ namespace FastSockets.Networking
         /// <param name="state">The state.</param>
         internal void PingClients(object state)
         {
+            ClientListMutex.WaitOne();
             if (Clients.Count > 0 && !ShuttingDown)
             {
-                byte[] buffer = Encoding.ASCII.GetBytes(pingData);
-
-                foreach (KeyValuePair<int, ClientConnection> cc in Clients)
+                if (PingsDoneCount == 0)
                 {
-                    pingSender.SendAsync(((IPEndPoint)cc.Value.ThisClient.Client.RemoteEndPoint).Address, TCPTimeout, buffer, cc.Value.ThisID);
+                    byte[] buffer = Encoding.ASCII.GetBytes(pingData);
+                 
+                    foreach (KeyValuePair<int, ClientConnection> cc in Clients)
+                    {
+                        Ping pingSender = new Ping();
+                        PingOptions options = new PingOptions(64, true);
+                        pingSender.PingCompleted += PingCallback;
+                        pingSender.SendAsync(((IPEndPoint)cc.Value.ThisClient.Client.RemoteEndPoint).Address, TCPTimeout, buffer, cc.Value.ThisID);
+                    }
+                                      
                 }
             }
+            ClientListMutex.ReleaseMutex();
         }
 
         /// <summary>
@@ -621,13 +656,15 @@ namespace FastSockets.Networking
                     try
                     {
                         int.TryParse(spl[1], out id);
-                        Disconnect(id);
                     }
                     catch
                     {
                         Console.WriteLine("Error client ID is not a Integer!");
                         return;
                     }
+
+                    if (id > -2)
+                        Disconnect(id);
                 }
             }
 
@@ -685,6 +722,13 @@ namespace FastSockets.Networking
             {
                 Console.WriteLine("Ping canceled.");
                 Disconnect(((ClientConnection)e.UserState).ThisID);
+                ((Ping)sender).Dispose();
+                PingsDoneCount++;
+                if (PingsDoneCount >= Clients.Count)
+                {
+                    PingsDoneCount = 0;
+                }
+                return;
             }
 
             // If an error occurred, display the exception to the user.
@@ -692,16 +736,53 @@ namespace FastSockets.Networking
             {
                 Console.WriteLine("Ping failed:");
                 Disconnect(((ClientConnection)e.UserState).ThisID);
+                ((Ping)sender).Dispose();
+                PingsDoneCount++;
+                if (PingsDoneCount >= Clients.Count)
+                {
+                    PingsDoneCount = 0;
+                }
+                return;
             }
 
-            System.Net.NetworkInformation.PingReply reply = e.Reply;
+            PingReply reply = e.Reply;
             int id = ((int)e.UserState);
-            Clients[id].Ping = (int)(reply.RoundtripTime / 2);
+            ClientConnection cc = null;
+            if (!Clients.TryGetValue(id, out cc))
+            {
+                ((Ping)sender).Dispose();
+                PingsDoneCount++;
+                if (PingsDoneCount >= Clients.Count)
+                {
+                    PingsDoneCount = 0;
+                }
+                return;
+            }
+
+            if (!cc.ThisClient.Connected)
+            {
+                ((Ping)sender).Dispose();
+                PingsDoneCount++;
+                if (PingsDoneCount >= Clients.Count)
+                {
+                    PingsDoneCount = 0;
+                }
+                return;
+            }
+
+            cc.Ping = (int)(reply.RoundtripTime / 2);
             PacketDesc_Ping pkt = new PacketDesc_Ping();
             pkt.PacketTarget = EConnectionType.CLIENT;
             pkt.PacketOriginClientID = UniqueID;
-            pkt.ToServerLatency = Clients[id].Ping; // send clients one way to server latency
+            pkt.ToServerLatency = cc.Ping; // send clients one way to server latency
             SendPacketToClient(pkt, id);
+            ((Ping)sender).Dispose();
+            PingsDoneCount++;
+
+            if (PingsDoneCount >= Clients.Count)
+            {
+                PingsDoneCount = 0;
+            }
         }
         
         /// <summary>
@@ -826,7 +907,7 @@ namespace FastSockets.Networking
 
                 while (clientConnected)
                 {
-                    if (!Clients[theClient.ThisID].ThisClient.Connected)
+                    if (!IsClientConnected(Clients[theClient.ThisID]))
                     {
                         break; 
                     }
@@ -845,15 +926,13 @@ namespace FastSockets.Networking
 
                     if (byteList.Count > 0)
                     {
-                        ParsePacket(byteList, theClient);
+                        ParsePacket(ref byteList, theClient);
                     }
 
                     if (!Clients.ContainsKey(theClient.ThisID))
                     {
                         break; 
                     }
-
-                    clientConnected = IsClientConnected(Clients[theClient.ThisID].ThisClient) & (!ShuttingDown);
                 }
 
                 //ConsoleLogger.WriteToLog("Client ID: " + theClient.ThisID + " Disconnected.", true);

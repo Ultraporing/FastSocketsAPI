@@ -6,6 +6,7 @@
 
 namespace FastSockets.Networking
 {
+    using FastSockets.Helper;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
@@ -174,7 +175,7 @@ namespace FastSockets.Networking
 
         public delegate void OnPacketReceivedCallback(KeyValuePair<ClientConnection, object> pkt);
         public delegate void OnApiEvent();
-        public event OnPacketReceivedCallback OnClientConnectedReceived, OnClientDisconnectedReceived, OnPingReceived, OnSetClientIDReceived;
+        public event OnPacketReceivedCallback OnClientConnectedReceived, OnClientDisconnectedReceived, OnPingReceived, OnSetClientIDReceived, OnProbeReceived;
         public event OnApiEvent OnDisconnected, OnConnectionFailed, OnConnectionSuccess;
 
         /// <summary>
@@ -231,7 +232,7 @@ namespace FastSockets.Networking
             {
                 if (ParentServerConnection.ThisClient != null)
                 {
-                    return ParentServerConnection.ThisClient.Connected;
+                    return IsClientConnected(ParentServerConnection);
                 }
 
                 return false;
@@ -448,23 +449,20 @@ namespace FastSockets.Networking
         /// </summary>
         /// <param name="client">The client.</param>
         /// <returns>Returns true if client is connected.</returns>
-        internal bool IsClientConnected(TcpClient client)
+        internal bool IsClientConnected(ClientConnection client)
         {
             try
             {
-                if (client.Client.Connected)
+                if (client.ThisClient.Connected)
                 {
-                    if (client.Client.Poll(0, SelectMode.SelectWrite) && !client.Client.Poll(0, SelectMode.SelectError))
+                    PacketDesc_Probe probe = new PacketDesc_Probe();
+                    probe.PacketOriginClientID = UniqueID;
+                    probe.PacketTarget = client.ConnectionType;
+                    byte[] p = probe.FinalizePacket();
+
+                    if (client.ThisClient.Client.Send(p, p.Length, 0) == p.Length)
                     {
-                        byte[] buffer = new byte[1];
-                        if (client.Client.Receive(buffer, SocketFlags.Peek) == 0)
-                        {
-                            return false;
-                        }
-                        else
-                        {
-                            return true;
-                        }
+                        return true;
                     }
                     else
                     {
@@ -476,28 +474,10 @@ namespace FastSockets.Networking
                     return false;
                 }
             }
-            catch (ObjectDisposedException)
+            catch
             {
                 return false;
             }
-            catch (IOException)
-            {
-                return false;
-            }
-            catch (SocketException)
-            {
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Parses the packet.
-        /// </summary>
-        /// <param name="data">The data.</param>
-        /// <param name="sender">The sender.</param>
-        internal void ParsePacket(List<byte> data, ClientConnection sender)
-        {
-            ParsePacket(data.ToArray(), ref sender);
         }
 
         /// <summary>
@@ -517,19 +497,25 @@ namespace FastSockets.Networking
         /// </summary>
         /// <param name="data">The data.</param>
         /// <param name="sender">The sender.</param>
-        internal void ParsePacket(byte[] data, ref ClientConnection sender)
+        internal void ParsePacket(ref List<byte> data, ClientConnection sender)
         {
             try
             {
-                int packetID = BitConverter.ToInt32(data, 0);
-                byte[] barr = new byte[data.Length - sizeof(int)];
-                Array.Copy(data.ToArray(), sizeof(int), barr, 0, barr.Length);
+                int packetID = BitConverter.ToInt32(data.ToArray(), sizeof(int));
+                byte[] barr = new byte[data.Count - 3*sizeof(int)];
+                Array.Copy(data.ToArray(), 2*sizeof(int), barr, 0, barr.Length);
 
-                CallPacketFunction(packetID, sender, ref barr, ref _packetMethods);
+                long bytesRead = 0;
+                CallPacketFunction(packetID, sender, barr, ref _packetMethods, out bytesRead);
+
+                if (bytesRead != -1)
+                    data.RemoveRange(0, (int)bytesRead + 3 * sizeof(int));
+                else
+                    data.Clear();
             }
             catch
             {
-                ConsoleLogger.WriteErrorToLog("Recieved Invalid Packet by Client ID: " + sender.ThisID + ", Data: " + System.Text.Encoding.Default.GetString(data));
+                ConsoleLogger.WriteErrorToLog("Recieved Invalid Packet by Client ID: " + sender.ThisID + ", Data: " + System.Text.Encoding.Default.GetString(data.ToArray()));
             }
         }
 
@@ -542,24 +528,25 @@ namespace FastSockets.Networking
         /// <param name="data">The data.</param>
         /// <param name="dict">The dictionary.</param>
         /// <returns>Returns true if call succeeded.</returns>
-        internal bool CallPacketFunction<ClassType>(int packetID, ClientConnection sender, ref byte[] data, ref Dictionary<int, Func<ClassType, object, object>> dict) where ClassType : class
+        internal bool CallPacketFunction<ClassType>(int packetID, ClientConnection sender, byte[] data, ref Dictionary<int, Func<ClassType, object, object>> dict, out long bytesRead) where ClassType : class
         {
-            object ret = Serializer.DataSerializers.ByteArrayToObject(data);
- 
-            if (!dict.ContainsKey(packetID))
+            try
             {
-                ConsoleLogger.WriteErrorToLog("Packet does not exist, Invalid packetID: " + packetID);
-                return false;
-            }
-
-            Func<ClassType, object, object> meth = null;
-
-            if (dict.TryGetValue(packetID, out meth))
-            {
-                if (sender.ThisClient != null)
+                if (!dict.ContainsKey(packetID))
                 {
-                    try
-                    {
+                    ConsoleLogger.WriteErrorToLog("Packet does not exist, Invalid packetID: " + packetID);
+                    bytesRead = -1;
+                    return false;
+                }
+
+                object ret = Serializer.DataSerializers.ByteArrayToObject(data, out bytesRead);
+ 
+                Func<ClassType, object, object> meth = null;
+
+                if (dict.TryGetValue(packetID, out meth))
+                {
+                    if (sender.ThisClient != null)
+                    {                 
                         ThreadStart threadMain = delegate 
                         {
                             try
@@ -571,13 +558,15 @@ namespace FastSockets.Networking
                                 return;
                             }
                         };
-                        new Thread(threadMain).Start();
-                    }
-                    catch
-                    {
-                        return false;
+                        new Thread(threadMain).Start();                  
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                ConsoleLogger.WriteErrorToLog(ex.Message);
+                bytesRead = -1;
+                return false;
             }
 
             return true;
@@ -622,6 +611,21 @@ namespace FastSockets.Networking
             if (OnPingReceived != null)
             {
                 OnPingReceived(conPkt);
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Received the packet probe.
+        /// </summary>
+        /// <param name="conPkt">The sender connection and packet.</param>
+        /// <returns>use how needed</returns>
+        protected virtual bool ReceivedPacket_Probe(KeyValuePair<ClientConnection, object> conPkt)
+        {
+            if (OnProbeReceived != null)
+            {
+                OnProbeReceived(conPkt);
             }
 
             return true;
@@ -775,7 +779,7 @@ namespace FastSockets.Networking
 
                 while (serverConnected)
                 {
-                    if (!ParentServerConnection.ThisClient.Connected)
+                    if (!IsClientConnected(ParentServerConnection))
                     {
                         break; 
                     }
@@ -794,10 +798,8 @@ namespace FastSockets.Networking
 
                     if (byteList.Count > 0)
                     {
-                        ParsePacket(byteList, ParentServerConnection);
+                        ParsePacket(ref byteList, ParentServerConnection);
                     }
-
-                    serverConnected = IsClientConnected(ParentServerConnection.ThisClient) & (!ShuttingDown);
                 }
 
                 ConsoleLogger.WriteToLog("Server ID: " + ParentServerConnection.ThisID + " Disconnected.", true);

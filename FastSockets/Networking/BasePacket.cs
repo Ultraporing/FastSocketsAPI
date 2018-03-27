@@ -10,6 +10,22 @@ namespace FastSockets.Networking
     using System.Diagnostics;
 
     /// <summary>
+    /// Packet Magic numbers
+    /// </summary>
+    public enum EPacketMagicNumbers
+    {
+        /// <summary>
+        /// Number representing the beginning of a packet
+        /// </summary>
+        PacketBegin = 90495533,
+
+        /// <summary>
+        /// Number representing the end of a packet
+        /// </summary>
+        PacketEnd = 28879791
+    }
+
+    /// <summary>
     /// Enum of the included packets.
     /// </summary>
     public enum EBasePackets
@@ -30,9 +46,14 @@ namespace FastSockets.Networking
         ClientDisconnected,
 
         /// <summary>
-        /// The ping alive
+        /// The ping
         /// </summary>
         Ping,
+
+        /// <summary>
+        /// Checks if the target is still connected.
+        /// </summary>
+        Probe,
 
         /// <summary>
         /// The number of packets
@@ -96,9 +117,11 @@ namespace FastSockets.Networking
             }
 
             byte[] br = Serializer.DataSerializers.ObjectToByteArray(this);
-            byte[] outBarr = new byte[sizeof(int) + br.Length];
-            Array.Copy(BitConverter.GetBytes(packetID), outBarr, sizeof(int));
-            Array.Copy(br, 0, outBarr, sizeof(int), br.Length);
+            byte[] outBarr = new byte[3*sizeof(int) + br.Length];
+            Array.Copy(BitConverter.GetBytes((int)EPacketMagicNumbers.PacketBegin), outBarr, sizeof(int));
+            Array.Copy(BitConverter.GetBytes(packetID), 0, outBarr, sizeof(int), sizeof(int));
+            Array.Copy(br, 0, outBarr, 2*sizeof(int), br.Length);
+            Array.Copy(BitConverter.GetBytes((int)EPacketMagicNumbers.PacketEnd), 0, outBarr, outBarr.Length - sizeof(int), sizeof(int));
 
             return outBarr;
         }
@@ -149,7 +172,7 @@ namespace FastSockets.Networking
     }
 
     /// <summary>
-    /// The Ping alive Packet
+    /// The Ping Packet
     /// </summary>
     // /// <seealso cref="FastSockets.Networking.BasePacket{FastSockets.Networking.EBasePackets}" />
     [Serializable]
@@ -159,5 +182,14 @@ namespace FastSockets.Networking
         /// The time
         /// </summary>
         public int ToServerLatency;
+    }
+
+    /// <summary>
+    /// The Probe Packet
+    /// </summary>
+    // /// <seealso cref="FastSockets.Networking.BasePacket{FastSockets.Networking.EBasePackets}" />
+    [Serializable]
+    public class PacketDesc_Probe : BasePacket<EBasePackets>
+    {
     }
 }

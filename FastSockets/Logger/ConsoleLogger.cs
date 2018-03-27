@@ -55,8 +55,8 @@ namespace FastSockets
                 return;
             }
 
-            FileStream ostrm;
-            StreamWriter writer;
+            FileStream ostrm = null;
+            StreamWriter writer = null;
             TextWriter oldOut = Console.Out;
             try
             {
@@ -69,19 +69,28 @@ namespace FastSockets
             {
                 ////Console.WriteLine("Cannot open " + _logfile + " for writing");
                 ////Console.WriteLine(e.Message);
+                if (writer != null)
+                    writer.Close();
+                if (ostrm != null)
+                    ostrm.Close();
+
+                _fileLocked.Set();
+
                 return;
             }
 
             Console.SetOut(writer);
             Console.WriteLine(DateTime.Now.ToString("dd-MM-yyyy HH:mm:ss.fff") + "|" + message);
             Console.SetOut(oldOut);
-            writer.Close();
-            ostrm.Close();
+
             if (toConsole)
             {
                 Console.WriteLine(message);
             }
-  
+
+            writer.Close();
+            ostrm.Close();
+
             _fileLocked.Set();
         }
 

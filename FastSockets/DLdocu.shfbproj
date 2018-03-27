@@ -13,14 +13,15 @@
     <RootNamespace>Documentation</RootNamespace>
     <Name>Documentation</Name>
     <!-- SHFB properties -->
-    <FrameworkVersion>.NET Framework 4.0</FrameworkVersion>
+    <FrameworkVersion>.NET Framework 3.5</FrameworkVersion>
     <OutputPath>.\Help\</OutputPath>
     <HtmlHelpName>Fast Sockets Documentation</HtmlHelpName>
     <Language>en-US</Language>
     <DocumentationSources>
       <DocumentationSource sourceFile="bin\x86\FastSockets.xml" />
-<DocumentationSource sourceFile="bin\x86\FastSocketsAPI.dll" /></DocumentationSources>
-    <HelpFileVersion>1.0.0.3</HelpFileVersion>
+      <DocumentationSource sourceFile="bin\x86\FastSocketsAPI.dll" />
+    </DocumentationSources>
+    <HelpFileVersion>1.0.0.4</HelpFileVersion>
     <MaximumGroupParts>2</MaximumGroupParts>
     <NamespaceGrouping>True</NamespaceGrouping>
     <SyntaxFilters>C#</SyntaxFilters>

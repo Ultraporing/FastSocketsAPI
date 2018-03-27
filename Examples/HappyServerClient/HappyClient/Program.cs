@@ -15,12 +15,11 @@ namespace HappyClient
             // subscribe to our event
             c.OnMessagePacketReceived += OnMessagePacketReceived;
 
-            c.Connect(new IPEndPoint(IPAddress.Loopback, 12341), new IPEndPoint(IPAddress.Any, 12340));
+            c.Connect(new IPEndPoint(IPAddress.Loopback, 12341), new IPEndPoint(IPAddress.Any, args.Length > 0 ? Int32.Parse(args[0]) : 1234));
 
             PacketDesc_Message msg = new PacketDesc_Message();
             msg.PacketTarget = EConnectionType.SERVER;
             msg.Message = "I like Trains!";
-            msg.PacketOriginClientID = c.UniqueID;
             c.SendPacketToParent(msg);
 
             while (c.IsConnected())

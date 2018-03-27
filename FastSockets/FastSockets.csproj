@@ -66,6 +66,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Config\Config.cs" />
+    <Compile Include="Helper\ArrayHelper.cs" />
     <Compile Include="Logger\ConsoleLogger.cs" />
     <Compile Include="Networking\BaseClient.cs" />
     <Compile Include="Networking\BasePacket.cs" />

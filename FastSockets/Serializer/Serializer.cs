@@ -26,7 +26,9 @@ namespace FastSockets.Serializer
             var formatter = new BinaryFormatter();
             var stream = new MemoryStream();
             formatter.Serialize(stream, data);
-            return stream.ToArray();
+            byte[] arr = stream.ToArray();
+
+            return arr;
         }
 
         /// <summary>
@@ -39,7 +41,9 @@ namespace FastSockets.Serializer
         {
             var stream = new MemoryStream(array);
             var formatter = new BinaryFormatter();
-            return (StructType)formatter.Deserialize(stream);
+            StructType s = (StructType)formatter.Deserialize(stream);
+
+            return s;
         }
 
         /// <summary>
@@ -62,13 +66,16 @@ namespace FastSockets.Serializer
         /// </summary>
         /// <param name="arrBytes">The Byte Array.</param>
         /// <returns>Returns object converted from byte array</returns>
-        public static object ByteArrayToObject(byte[] arrBytes)
+        public static object ByteArrayToObject(byte[] arrBytes, out long bytesRead)
         {
             MemoryStream memStream = new MemoryStream();
             BinaryFormatter binForm = new BinaryFormatter();
+            memStream.Position = 0;
             memStream.Write(arrBytes, 0, arrBytes.Length);
             memStream.Seek(0, SeekOrigin.Begin);
             object obj = binForm.Deserialize(memStream);
+            bytesRead = memStream.Position;
+ 
             return obj;
         }
     }
